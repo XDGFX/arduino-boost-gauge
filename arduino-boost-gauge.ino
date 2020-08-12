@@ -135,13 +135,13 @@ void loop() // Start loop
   int boostmbar = map(analogRead(SENSOR_PIN), 21, 961, 100, 2600);
   rawval = analogRead(SENSOR_PIN); // Read MAP sensor raw value on analog port 0
 
-  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
-  VALUE = boostmbar;                 // Read the next sensor value
-  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
-  SUM = SUM + VALUE;                 // Add the newest reading to the sum
-  INDEX = (INDEX + 1) % WINDOW_SIZE; // Increment the index, and wrap to 0 if it exceeds the window size
-
-  AVERAGED = SUM / WINDOW_SIZE; // Divide the sum of the window by the window size for the result
+//  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
+//  VALUE = boostmbar;                 // Read the next sensor value
+//  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
+//  SUM = SUM + VALUE;                 // Add the newest reading to the sum
+//  INDEX = (INDEX + 1) % WINDOW_SIZE; // Increment the index, and wrap to 0 if it exceeds the window size
+//
+//  AVERAGED = SUM / WINDOW_SIZE; // Divide the sum of the window by the window size for the result
 
   barboost = ((rawval * 0.14)); // Calculate boost value for the graph
 
@@ -207,7 +207,7 @@ void loop() // Start loop
     display.setTextColor(WHITE);
     display.setTextSize(3);
     display.setCursor(0, 10);
-    display.println(-1 * ((boostmbar * 0.001) - 0.865)*63.2);
+    display.println(((boostmbar * 0.001) - 0.865)*63.2, 1);
   }
   else if ((((boostmbar * 0.001) - 0.865)*14) > 0) {
     display.setTextSize(1);
