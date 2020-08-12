@@ -1,6 +1,7 @@
 {
-    "port": "COM3",
-    "board": "arduino:avr:uno",
+    "port": "COM4",
+    "board": "arduino:avr:nano",
     "programmer": "AVRISP mkII",
-    "sketch": "arduino-boost-gauge.ino"
+    "sketch": "arduino-boost-gauge.ino",
+    "configuration": "cpu=atmega328"
 }
