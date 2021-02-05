@@ -6,7 +6,7 @@
 #include <Adafruit_SSD1306.h>
 
 // Pin to connect pressure sensor output to
-#define SENSOR_PIN A2
+#define SENSOR_PIN A2 
 
 // Number of data values to average for smoothing
 #define WINDOW_SIZE 6
@@ -18,6 +18,14 @@
 int OLED_RESET = -1;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+////Setup 7 Segment Display
+//SevSeg sevseg;
+#define SLAVE_ADDR 9
+
+// Frequency to update pressure
+int polling_rate = 60;
+int poll_delay;
+unsigned long poll_time;
 
 // Variables for bar graph
 float rawval = 0;   // Setup raw sensor value
@@ -114,9 +122,27 @@ const unsigned char abg [] PROGMEM = {
 
 void setup()
 {
+  // OLED
+  Wire.setClock(400000);
   Serial.begin(9600);                  // start monitoring raw voltage for calibration
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // 3.3V power supply
   display.clearDisplay();              // Clear the display and ram
+
+  // 7 Segment
+  Wire.begin();
+//  byte numDigits = 4;  
+//  byte digitPins[] = {2, 3, 4, 5};
+//  byte segmentPins[] = {6, 7, 8, 9, 10, 11, 12, 13};
+//  bool resistorsOnSegments = 0; 
+//  // variable above indicates that 4 resistors were placed on the digit pins.
+//  // set variable to 1 if you want to use 8 resistors on the segment pins.
+//  sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins, resistorsOnSegments);
+//  sevseg.setBrightness(90);
+//  sevseg.setNumber(3141, 3);
+
+  // Calculate delay between polls
+  poll_delay = 1000 / polling_rate;
+
 
   // Display the splash screen
   display.drawBitmap(0, 0, abg, 128, 64, WHITE);
@@ -128,20 +154,48 @@ void setup()
   {
     sensorArray[count] = 0;
   }
+
+}
+
+
+//void loop() {
+//  
+//  if (poll_time < millis() - poll_delay) {
+//    main_logic();
+//    poll_time = millis();
+//  }
+//
+//  
+//  refresh_sevseg();
+//  
+//}
+
+//void refresh_sevseg() {
+//  sevseg.refreshDisplay(); // Must run repeatedly
+//}
+
+void writeInt(unsigned int value){
+    Wire.beginTransmission(SLAVE_ADDR);
+    Wire.write(lowByte(value));
+    Wire.write(highByte(value));
+    Wire.endTransmission();
 }
 
 void loop() // Start loop
 {
+
+//  sevseg.setNumber(8888, 3);
+  
   int boostmbar = map(analogRead(SENSOR_PIN), 21, 961, 100, 2600);
   rawval = analogRead(SENSOR_PIN); // Read MAP sensor raw value on analog port 0
 
-//  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
-//  VALUE = boostmbar;                 // Read the next sensor value
-//  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
-//  SUM = SUM + VALUE;                 // Add the newest reading to the sum
-//  INDEX = (INDEX + 1) % WINDOW_SIZE; // Increment the index, and wrap to 0 if it exceeds the window size
-//
-//  AVERAGED = SUM / WINDOW_SIZE; // Divide the sum of the window by the window size for the result
+  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
+  VALUE = boostmbar;                 // Read the next sensor value
+  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
+  SUM = SUM + VALUE;                 // Add the newest reading to the sum
+  INDEX = (INDEX + 1) % WINDOW_SIZE; // Increment the index, and wrap to 0 if it exceeds the window size
+
+  AVERAGED = SUM / WINDOW_SIZE; // Divide the sum of the window by the window size for the result
 
   barboost = ((rawval * 0.14)); // Calculate boost value for the graph
 
@@ -196,11 +250,14 @@ void loop() // Start loop
   if (boostDisp < 0) {
     boostDisp = 0.00;
   }
-  
+
+  // Send peak boost to both displays
   display.println(boostDisp); // 0.97 = 970mbar atmospheric pressure correction
+  writeInt((int) (boostDisp*100));
 
 
   if ((((boostmbar  * 0.001) - 0.865)*14) < 0) {
+    
     display.setTextSize(1);
     display.setCursor(97, 20);
     display.println("INHG");
@@ -210,9 +267,10 @@ void loop() // Start loop
     display.println(((boostmbar * 0.001) - 0.865)*63.2, 1);
   }
   else if ((((boostmbar * 0.001) - 0.865)*14) > 0) {
+    
     display.setTextSize(1);
     display.setCursor(97, 20);
-    display.println("BOOST");
+    display.println("PSI");
     display.setTextColor(WHITE);
     display.setTextSize(3);
     display.setCursor(0, 10);
@@ -221,9 +279,7 @@ void loop() // Start loop
 
 }
 
-  delay(1);
   display.display();
   display.clearDisplay();
 
-  delay(10); // delay half second between numbers
 }
